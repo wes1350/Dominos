@@ -34,31 +34,30 @@ class Board:
             self.east = 0
             self.south = 0
             self.west = 0
+            if domino.is_double():
+                self.set_spinner_x(0)
         elif direction == "N":
             if self.spinner_x is None:
                 raise Exception("Cannot add domino to north side when spinner isn't set")
             self.north += 1
             self.board[(self.spinner_x, self.north)] = domino
-            print((self.spinner_x, self.north), len(self.board))
         elif direction == "E":
             self.east += 1
             self.board[(self.east, 0)] = domino
-            print((self.east, 0), len(self.board))
+            if self.spinner_x is None and domino.is_double():
+                self.set_spinner_x(self.east)
         elif direction == "S":
             if self.spinner_x is None:
                 raise Exception("Cannot add domino to south side when spinner isn't set")
             self.south -= 1
             self.board[(self.spinner_x, self.south)] = domino
-            print((self.spinner_x, self.south), len(self.board))
         elif direction == "W":
             self.west -= 1
             self.board[(self.west, 0)] = domino
-            print((self.west, 0), len(self.board))
+            if self.spinner_x is None and domino.is_double():
+                self.set_spinner_x(self.west)
         else:
             raise ValueError("Unknown direction:", direction)
-
-    def spinner_set(self):
-        return self.spinner_x is not None
 
     def set_spinner_x(self, x):
         if self.spinner_x is not None:

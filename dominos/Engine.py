@@ -15,12 +15,17 @@ class Engine:
         hand = pack.pull(28)
         print([str(d) for d in hand])
 
-        board.set_spinner_x(0)
+        spinner_set = False
+
         for i in range(len(hand)):
             if i == 0:
                 board.add_domino(hand[i])
+                if hand[i].is_double():
+                    spinner_set = True
             else:
-                board.add_domino(hand[i], random.choice(["N", "E", "S", "W"]))
+                board.add_domino(hand[i], random.choice(["N", "E", "S", "W"] if spinner_set else ["E", "W"]))
+                if hand[i].is_double():
+                    spinner_set = True
 
         print(board)
 
