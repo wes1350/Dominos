@@ -14,6 +14,14 @@ class Player:
     def add_points(self, points):
         self.score += points
 
-    def get_hand_value(self):
-        """Return the sum of the pips in this player's hand, rounded to the nearest 5."""
-        pass
+    def get_score(self):
+        return self.score()
+
+    def hand_total(self):
+        return sum([d.total() for d in self.hand])
+
+    def pull(self):
+        return 
+
+    def hand_is_empty(self):
+        return len(self.hand) == 0

@@ -77,13 +77,13 @@ class Board:
                 return False, False
             return True, False  # No need to check in this case as it's the first placement
         elif direction == "N":
-            if self.spinner_x is None:
+            if self.spinner_x is None or self.east == 0 or self.west == 0:
                 return False, False
             coordinate = (self.spinner_x, self.north)
         elif direction == "E":
             coordinate = (self.east, 0)
         elif direction == "S":
-            if self.spinner_x is None:
+            if self.spinner_x is None or self.east == 0 or self.west == 0:
                 return False, False
             coordinate = (self.spinner_x, self.south)
         elif direction == "W":
@@ -96,13 +96,17 @@ class Board:
         else:
             hook = self.board[coordinate].tail()
             
-        link_end = domino.tail() if direction in ["N", "W"] else domino.head()
-        free_end = domino.head() if direction in ["N", "W"] else domino.tail()
-        if link_end == hook:
+        if self.get_link_end(domino, direction) == hook:
             return True, False
-        elif free_end == hook:
+        elif self.get_free_end(domino, direction) == hook:
             return True, True
         return False, False 
+
+    def get_link_end(self, domino, direction):
+        return domino.tail() if direction in ["N", "W"] else domino.head()
+
+    def get_free_end(self, domino, direction):
+        return domino.head() if direction in ["N", "W"] else domino.tail()
 
     def get_valid_placements(self, domino):
         """Return which directions a domino can be placed in."""
@@ -122,6 +126,47 @@ class Board:
 
     def is_empty(self):
         return len(self.board) == 0
+
+    def score_board(self):
+        if self.is_empty():
+            raise Exception("Cannot score an empty board")
+
+        total = 0
+        if self.east == 0 and self.west == 0:
+            total += self.board[(0, 0)].total()
+        else:
+            # We have at least two dominos, so each domino on the end will only count once
+            
+            # Handle east-west
+            east = self.board[(self.east, 0)] 
+            west = self.board[(self.west, 0)] 
+            
+            if east.is_double():
+                total += east.total()
+            else:
+                total += self.get_free_end(east, "E")
+
+            if west.is_double():
+                total += west.total()
+            else:
+                total += self.get_free_end(west, "W")
+
+            # Handle north-south
+            if self.north > 0:
+                north = self.board[(self.spinner_x, self.north)]
+                if north.is_double():
+                    total += north.total()
+                else:
+                    total += self.get_free_end(north, "N")
+
+            if self.south > 0:
+                south = self.board[(self.spinner_x, self.south)]
+                if south.is_double():
+                    total += south.total()
+                else:
+                    total += self.get_free_end(south, "S")
+
+        return total if total % 5 == 0 else 0
 
     def __str__(self):
         """Prints the current board state."""

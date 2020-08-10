@@ -41,6 +41,9 @@ class Domino:
     def tail(self):
         return self.ends[0] if self.reversed else self.ends[1]
 
+    def total(self):
+        return sum(self.ends)
+
     def __eq__(self, other):
         return self.ends == other.ends
 
