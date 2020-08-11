@@ -77,13 +77,13 @@ class Board:
                 return False, False
             return True, False  # No need to check in this case as it's the first placement
         elif direction == "N":
-            if self.spinner_x is None or self.east == 0 or self.west == 0:
+            if self.spinner_x is None or self.east == self.spinner_x or self.west == self.spinner_x:
                 return False, False
             coordinate = (self.spinner_x, self.north)
         elif direction == "E":
             coordinate = (self.east, 0)
         elif direction == "S":
-            if self.spinner_x is None or self.east == 0 or self.west == 0:
+            if self.spinner_x is None or self.east == self.spinner_x or self.west == self.spinner_x:
                 return False, False
             coordinate = (self.spinner_x, self.south)
         elif direction == "W":
@@ -165,7 +165,7 @@ class Board:
                 else:
                     total += self.get_free_end(north, "N")
 
-            if self.south > 0:
+            if self.south < 0:
                 south = self.board[(self.spinner_x, self.south)]
                 if south.is_double():
                     total += south.total()

@@ -9,27 +9,38 @@ class Engine:
     def __init__(self):
         self.n_players = 2
         self.players = []
-        self.board = Board()
-        self.pack = Pack()
+        self.board = None
+        self.pack = None
         for i in range(self.n_players):
             self.players.append(Player(i))
-            self.players[i].assign_hand(self.pack.pull(7))
         self.current_player = 0
-        self.win_threshold = 20
+        self.win_threshold = 30
 
     def run_game(self):
         """Start and run a game until completion, handling game logic as necessary."""
-        print(self.board)
         print("Scores:", self.get_scores())
         while not self.game_is_over():
-            self.play_turn()
-            self.next_turn()
-            print("Scores:", self.get_scores())
-        winner = self.players.index(max(self.get_scores()))
+            self.play_round()
+
+        scores = self.get_scores(indexed=False)
+        
+        winner = scores.index(max(scores))
         self.shout("Game is over!\n\nPlayer {} wins!".format(winner))
         self.shout("", "game_over")
         return winner
 
+    def play_round(self):
+        self.board = Board()
+        self.pack = Pack()
+        for i in range(self.n_players):
+            self.players[i].assign_hand(self.pack.pull(7))
+        while self.players_have_dominos() and not self.game_is_over(): 
+            self.play_turn()
+            self.next_turn()
+            print("Scores:", self.get_scores())
+        if not self.players_have_dominos(): 
+            print(f"Player {self.current_player} dominoed!")
+        
     def play_turn(self):
         domino, direction = self.query_move(self.current_player)
         if domino is not None:
@@ -44,11 +55,17 @@ class Engine:
         """Move on to the next turn, updating the game state as necessary."""
         self.current_player = (self.current_player + 1) % self.n_players
 
-    def game_is_over(self):
-        return max(self.get_scores()) >= self.win_threshold
+    def players_have_dominos(self):
+        return min([len(p.get_hand()) for p in self.players]) > 0
 
-    def get_scores(self):
-        return {i: self.get_player_score(i) for i in range(len(self.players))}
+    def game_is_over(self):
+        return max(self.get_scores(indexed=False)) >= self.win_threshold
+
+    def get_scores(self, indexed=True):
+        if indexed:
+            return {i: self.get_player_score(i) for i in range(len(self.players))}
+        else:
+            return [self.get_player_score(i) for i in range(len(self.players))]
 
     def get_player_score(self, player):
         return self.players[player].get_score()
@@ -85,7 +102,7 @@ class Engine:
     def whisper(self, msg, player):
         print(player, ":", msg)
 
-    def shout(self, msg, msg_type):
+    def shout(self, msg, msg_type=None):
         print(msg)
 
 
