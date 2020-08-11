@@ -7,7 +7,7 @@ from dominos.classes.Player import Player
 
 class Engine:
     def __init__(self):
-        self.n_players = 2
+        self.n_players = 3
         self.players = []
         self.board = None
         self.pack = None
@@ -39,10 +39,11 @@ class Engine:
             self.next_turn()
             print("Scores:", self.get_scores())
         if not self.players_have_dominos(): 
-            print(f"Player {self.current_player} dominoed!")
             # Reverse current player switch
             self.current_player = (self.current_player + self.n_players - 1) % self.n_players
             self.players[self.current_player].add_points(self.get_value_on_domino(self.current_player))
+            print(f"Player {self.current_player} dominoed!")
+            print("Scores:", self.get_scores())
         
     def play_turn(self):
         domino, direction = self.query_move(self.current_player)
@@ -77,18 +78,27 @@ class Engine:
         while True:
             possible_placements = self.board.get_valid_placements_for_hand(self.players[player].get_hand())
             pretty_placements = [(x[0], str(x[1]), x[2]) for x in possible_placements]
-            print("Possible placements:", pretty_placements)
+            print("Possible placements:")
+            for el in pretty_placements:
+                print(" --- " + str(el))
             move_possible = any([len(t[-1]) > 0 for t in possible_placements])
             if move_possible:
                 try:
                     domino_index = int(input(f"Player {player}, what domino do you select?\n").strip())
-                    if 0 <= domino_index < len(possible_placements):
-                        # TODO: don't query direction if none is possible for this domino
-                        direction = input(f"Player {player}, what direction do you select?\n").strip()
-                        if direction not in possible_placements[domino_index][-1]:
-                            self.whisper("invalid direction: " + direction, player)
+                    if not (0 <= domino_index < len(possible_placements)) or len(possible_placements[domino_index][-1]) == 0:
+                        self.whisper("Invalid domino choice: " + str(domino_index), player)
+                    else:
+                        domino = possible_placements[domino_index][1]
+                        if len(possible_placements[domino_index][-1]) == 1:
+                            direction = possible_placements[domino_index][-1][0]
+                            return domino, direction
                         else:
-                            return possible_placements[domino_index][1], direction
+                            while True:
+                                direction = input(f"Player {player}, what direction do you select?\n").strip()
+                                if direction not in possible_placements[domino_index][-1]:
+                                    self.whisper("Invalid direction: " + direction, player)
+                                else:
+                                    return domino, direction
                 except Exception as e:
                     print("CAUGHT ERROR:", e)
                     self.whisper("Invalid input, try again", player)
