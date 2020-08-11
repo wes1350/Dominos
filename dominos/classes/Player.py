@@ -11,6 +11,13 @@ class Player:
     def add_domino(self, domino):
         self.hand.append(domino)
 
+    def remove_domino(self, domino):
+        for i, d in enumerate(self.hand):
+            if d == domino:
+                self.hand.pop(i)
+                return
+        raise Exception(f"Could not find domino {str(domino)} in hand. Hand: {[str(dom) for dom in self.hand]}")
+
     def add_points(self, points):
         self.score += points
 
@@ -22,9 +29,6 @@ class Player:
 
     def hand_total(self):
         return sum([d.total() for d in self.hand])
-
-    def pull(self):
-        return 
 
     def hand_is_empty(self):
         return len(self.hand) == 0

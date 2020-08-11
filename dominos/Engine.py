@@ -34,6 +34,7 @@ class Engine:
         domino, direction = self.query_move(self.current_player)
         if domino is not None:
             self.board.add_domino(domino, direction)
+            self.players[self.current_player].remove_domino(domino)
             score = self.board.score_board()
             self.players[self.current_player].add_points(score)
 
@@ -59,11 +60,11 @@ class Engine:
             print("Possible placements:", pretty_placements)
             move_possible = any([len(t[-1]) > 0 for t in possible_placements])
             if move_possible:
-                domino_index = int(input("Player {player}, what domino do you select?\n").strip())
                 try:
+                    domino_index = int(input(f"Player {player}, what domino do you select?\n").strip())
                     if 0 <= domino_index < len(possible_placements):
                         # TODO: don't query direction if none is possible for this domino
-                        direction = input("Player {player}, what direction do you select?\n").strip()
+                        direction = input(f"Player {player}, what direction do you select?\n").strip()
                         if direction not in possible_placements[domino_index][-1]:
                             self.whisper("invalid direction: " + direction, player)
                         else:
@@ -73,7 +74,7 @@ class Engine:
                     self.whisper("Invalid input, try again", player)
             else:
                 pulled = self.pack.pull()
-                _ = input("Player {player}, you have no valid moves. Press Enter to pull\n")
+                _ = input(f"Player {player}, you have no valid moves. Press Enter to pull\n")
                 if pulled is not None:
                     self.players[player].add_domino(pulled)
                 else:
