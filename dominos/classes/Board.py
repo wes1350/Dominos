@@ -24,12 +24,12 @@ class Board:
         return self.west
     """
 
-    def add_domino(self, domino, direction=None):
+    def add_domino(self, domino, direction=""):
         valid, reverse = self.verify_placement(domino, direction)
         if not valid:
             raise ValueError(f"Domino {str(domino)} cannot be added in the {direction} direction")
 
-        if direction is None:
+        if direction == "":
             # When placing the first domino
             if (0, 0) in self.board:
                 raise Exception("Must specify a valid direction if the board contains dominos")
@@ -72,7 +72,7 @@ class Board:
     def verify_placement(self, domino, direction):
         """Return whether a domino can be placed in the given direction and whether it needs to be reversed
            in order to be valid."""
-        if direction is None:
+        if direction == "":
             if (0, 0) in self.board:
                 return False, False
             return True, False  # No need to check in this case as it's the first placement
@@ -111,13 +111,19 @@ class Board:
     def get_valid_placements(self, domino):
         """Return which directions a domino can be placed in."""
         if self.is_empty():
-            return [None]
+            return [""]
         valid_dirs = []
         for direction in ["N", "E", "S", "W"]:
             valid, _ = self.verify_placement(domino, direction)
             if valid:
                 valid_dirs.append(direction)
         return valid_dirs
+
+    def get_valid_placements_for_hand(self, hand):
+        placements = [] 
+        for i, domino in enumerate(hand):
+            placements.append((i, domino, self.get_valid_placements(domino)))
+        return placements
 
     def set_spinner_x(self, x):
         if self.spinner_x is not None:
@@ -170,6 +176,8 @@ class Board:
 
     def __str__(self):
         """Prints the current board state."""
+        if self.north is None:
+            return "."
         rep = ""
         for r in range(self.north, self.south - 1, -1):
             for c in range(self.west, self.east + 1):

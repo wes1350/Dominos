@@ -8,14 +8,17 @@ class Player:
         """Assign a list of Dominos as this player's hand."""
         self.hand = hand
 
-    def add_domino_to_hand(self, domino):
+    def add_domino(self, domino):
         self.hand.append(domino)
 
     def add_points(self, points):
         self.score += points
 
     def get_score(self):
-        return self.score()
+        return self.score
+
+    def get_hand(self):
+        return self.hand
 
     def hand_total(self):
         return sum([d.total() for d in self.hand])
