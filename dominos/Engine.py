@@ -14,7 +14,7 @@ class Engine:
         for i in range(self.n_players):
             self.players.append(Player(i))
         self.current_player = 0
-        self.win_threshold = 30
+        self.win_threshold = 50
 
     def run_game(self):
         """Start and run a game until completion, handling game logic as necessary."""
@@ -40,6 +40,9 @@ class Engine:
             print("Scores:", self.get_scores())
         if not self.players_have_dominos(): 
             print(f"Player {self.current_player} dominoed!")
+            # Reverse current player switch
+            self.current_player = (self.current_player + self.n_players - 1) % self.n_players
+            self.players[self.current_player].add_points(self.get_value_on_domino(self.current_player))
         
     def play_turn(self):
         domino, direction = self.query_move(self.current_player)
@@ -98,6 +101,15 @@ class Engine:
                     self.shout("Pack is empty, cannot pull. Skipping turn")
                     return None, None
 
+    def get_value_on_domino(self, player):
+        """Get the value of a 'Domino' by a player, i.e. the sum, rounded to the 
+           nearest 5, of the other players' hand totals."""
+        total = sum([p.hand_total() for i, p in enumerate(self.players) if i != player])
+        if total % 5 > 2:
+            total += (5 - (total % 5))
+        else:
+            total -= total % 5
+        return total
 
     def whisper(self, msg, player):
         print(player, ":", msg)
