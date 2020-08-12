@@ -7,21 +7,22 @@ from dominos.classes.Player import Player
 
 class Engine:
     def __init__(self):
-        self.n_players = 3
+        self.n_players = 4
         self.players = []
         self.board = None
         self.pack = None
         for i in range(self.n_players):
             self.players.append(Player(i))
         self.current_player = None
-        self.win_threshold = 50
+        self.win_threshold = 150
+        self.n_passes = 0
 
     def run_game(self):
         """Start and run a game until completion, handling game logic as necessary."""
         print("Scores:", self.get_scores())
-        self.play_round(fresh_round=True)
+        next_round_fresh = self.play_round(fresh_round=True)
         while not self.game_is_over():
-            self.play_round()
+            next_round_fresh = self.play_round(next_round_fresh)
 
         scores = self.get_scores(indexed=False)
 
@@ -35,8 +36,9 @@ class Engine:
         self.draw_hands(fresh_round)
         if fresh_round:
             self.current_player = self.determine_first_player()
-        while self.players_have_dominos() and not self.game_is_over():
-            self.play_turn()
+        blocked = False
+        while self.players_have_dominos() and not blocked and not self.game_is_over():
+            blocked = self.play_turn()
             self.next_turn()
             print("Scores:", self.get_scores())
         if not self.players_have_dominos():
@@ -45,6 +47,17 @@ class Engine:
             self.players[self.current_player].add_points(self.get_value_on_domino(self.current_player))
             print(f"Player {self.current_player} dominoed!")
             print("Scores:", self.get_scores())
+            return False
+        elif blocked:
+            print("Game blocked!")
+            blocked_scorer, points = self.get_blocked_result()
+            if blocked_scorer is not None:
+                print(f"Player {blocked_scorer} scores {points}")
+                self.players[blocked_scorer].add_points(points)
+            print("Scores:", self.get_scores())
+            return True
+        else:  # Game is over
+            return False
 
     def play_turn(self):
         domino, direction = self.query_move(self.current_player)
@@ -53,11 +66,18 @@ class Engine:
             self.players[self.current_player].remove_domino(domino)
             score = self.board.score_board()
             self.players[self.current_player].add_points(score)
+            self.n_passes = 0
+        else:  # Player passes
+            self.n_passes += 1
+
+        if self.n_passes == self.n_players:
+            return True
 
         print(self.board)
+        return False
 
     def next_turn(self) -> None:
-        """Move on to the next turn, updating the game state as necessary."""
+        """Update the player to move."""
         self.current_player = (self.current_player + 1) % self.n_players
 
     def draw_hands(self, fresh_round=False):
@@ -99,7 +119,7 @@ class Engine:
             for p in range(self.n_players):
                 for d in self.players[p].get_hand():
                     if d.equals(i, i):
-                        return p 
+                        return p
         raise Exception("Could not find double in player's hands")
 
     def players_have_dominos(self):
@@ -163,6 +183,25 @@ class Engine:
         else:
             total -= total % 5
         return total
+
+    def get_blocked_result(self):
+        """Find the player (if any) that wins points when the game is blocked and return
+           that player and the points they receive."""
+        totals = [p.hand_total() for p in self.players]
+        print("Totals:", {i: totals[i] for i in range(len(totals))})
+        if len([t for t in totals if t == min(totals)]) > 1:
+            # Multiple players have lowest count, so nobody gets points
+            return None, 0
+        else:
+            # Find the player with minimum score and the sum of the other players' hands, rounded to the nearest 5
+            scorer = totals.index(min(totals))
+            total = sum(totals) - min(totals)
+            if total % 5 > 2:
+                total += (5 - (total % 5))
+            else:
+                total -= total % 5
+            return scorer, total
+
 
     def whisper(self, msg, player):
         print(player, ":", msg)
