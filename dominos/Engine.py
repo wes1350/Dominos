@@ -1,20 +1,24 @@
 """A game engine for running a game of Dominos."""
 import sys, random
 sys.path.insert(0, '..')  # For importing app config, required for using db
+from dominos.Config import Config
 from dominos.classes.Board import Board
 from dominos.classes.Pack import Pack
 from dominos.classes.Player import Player
 
 class Engine:
     def __init__(self):
-        self.n_players = 4
+        self.config = Config()
+        self.n_players = self.config.n_players
+        self.hand_size = self.config.hand_size
+        self.win_threshold = self.config.win_threshold
+        self.check_5_doubles = self.config.check_5_doubles
         self.players = []
         self.board = None
         self.pack = None
         for i in range(self.n_players):
             self.players.append(Player(i))
         self.current_player = None
-        self.win_threshold = 150
         self.n_passes = 0
 
     def run_game(self):
@@ -85,8 +89,9 @@ class Engine:
             self.pack = Pack()
             hands = []
             for i in range(self.n_players):
-                hands.append(self.pack.pull(7))
-            if self.verify_hands(hands, check_any_double=fresh_round):
+                hands.append(self.pack.pull(self.hand_size))
+            if self.verify_hands(hands, check_any_double=fresh_round,
+                                 check_5_doubles=self.check_5_doubles):
                 for i in range(self.n_players):
                     self.players[i].assign_hand(hands[i])
                 return
@@ -212,4 +217,4 @@ class Engine:
 
 if __name__ == "__main__":
     e = Engine()
-    e.run_game()
+    winner = e.run_game()
