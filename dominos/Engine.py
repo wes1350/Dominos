@@ -13,13 +13,13 @@ class Engine:
         self.pack = None
         for i in range(self.n_players):
             self.players.append(Player(i))
-        self.current_player = 0
+        self.current_player = None
         self.win_threshold = 50
 
     def run_game(self):
         """Start and run a game until completion, handling game logic as necessary."""
         print("Scores:", self.get_scores())
-        self.play_round(first_round=True)
+        self.play_round(fresh_round=True)
         while not self.game_is_over():
             self.play_round()
 
@@ -30,9 +30,11 @@ class Engine:
         self.shout("", "game_over")
         return winner
 
-    def play_round(self, first_round=False):
+    def play_round(self, fresh_round=False):
         self.board = Board()
-        self.draw_hands(first_round)
+        self.draw_hands(fresh_round)
+        if fresh_round:
+            self.current_player = self.determine_first_player()
         while self.players_have_dominos() and not self.game_is_over():
             self.play_turn()
             self.next_turn()
@@ -58,13 +60,13 @@ class Engine:
         """Move on to the next turn, updating the game state as necessary."""
         self.current_player = (self.current_player + 1) % self.n_players
 
-    def draw_hands(self, first_round=False):
+    def draw_hands(self, fresh_round=False):
         while True:
             self.pack = Pack()
             hands = []
             for i in range(self.n_players):
                 hands.append(self.pack.pull(7))
-            if self.verify_hands(hands, check_any_double=first_round):
+            if self.verify_hands(hands, check_any_double=fresh_round):
                 for i in range(self.n_players):
                     self.players[i].assign_hand(hands[i])
                 return
@@ -89,6 +91,16 @@ class Engine:
                 return False
 
         return True
+
+    def determine_first_player(self):
+        """Determine who has the largest double, and thus who will play first.
+           Assumes each player's hand is assigned and a double exists among them."""
+        for i in range(6, -1, -1):
+            for p in range(self.n_players):
+                for d in self.players[p].get_hand():
+                    if d.equals(i, i):
+                        return p 
+        raise Exception("Could not find double in player's hands")
 
     def players_have_dominos(self):
         return min([len(p.get_hand()) for p in self.players]) > 0

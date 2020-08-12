@@ -44,6 +44,9 @@ class Domino:
     def total(self):
         return sum(self.ends)
 
+    def equals(self, a, b):
+        return self.ends == (a, b) or self.ends == (b, a)
+
     def __eq__(self, other):
         return self.ends == other.ends
 
