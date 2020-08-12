@@ -19,32 +19,31 @@ class Engine:
     def run_game(self):
         """Start and run a game until completion, handling game logic as necessary."""
         print("Scores:", self.get_scores())
+        self.play_round(first_round=True)
         while not self.game_is_over():
             self.play_round()
 
         scores = self.get_scores(indexed=False)
-        
+
         winner = scores.index(max(scores))
         self.shout("Game is over!\n\nPlayer {} wins!".format(winner))
         self.shout("", "game_over")
         return winner
 
-    def play_round(self):
+    def play_round(self, first_round=False):
         self.board = Board()
-        self.pack = Pack()
-        for i in range(self.n_players):
-            self.players[i].assign_hand(self.pack.pull(7))
-        while self.players_have_dominos() and not self.game_is_over(): 
+        self.draw_hands(first_round)
+        while self.players_have_dominos() and not self.game_is_over():
             self.play_turn()
             self.next_turn()
             print("Scores:", self.get_scores())
-        if not self.players_have_dominos(): 
+        if not self.players_have_dominos():
             # Reverse current player switch
             self.current_player = (self.current_player + self.n_players - 1) % self.n_players
             self.players[self.current_player].add_points(self.get_value_on_domino(self.current_player))
             print(f"Player {self.current_player} dominoed!")
             print("Scores:", self.get_scores())
-        
+
     def play_turn(self):
         domino, direction = self.query_move(self.current_player)
         if domino is not None:
@@ -58,6 +57,38 @@ class Engine:
     def next_turn(self) -> None:
         """Move on to the next turn, updating the game state as necessary."""
         self.current_player = (self.current_player + 1) % self.n_players
+
+    def draw_hands(self, first_round=False):
+        while True:
+            self.pack = Pack()
+            hands = []
+            for i in range(self.n_players):
+                hands.append(self.pack.pull(7))
+            if self.verify_hands(hands, check_any_double=first_round):
+                for i in range(self.n_players):
+                    self.players[i].assign_hand(hands[i])
+                return
+
+    def verify_hands(self, hands, check_5_doubles=True, check_any_double=False):
+        if not check_5_doubles and not check_any_double:
+            return True
+
+        # Check that no hand has 5 doubles
+        no_doubles = True
+        for hand in hands:
+            n_doubles = len([d for d in hand if d.is_double()])
+            if check_5_doubles:
+                if n_doubles >= 5:
+                    return False
+            if n_doubles > 0:
+                no_doubles = False
+
+        # Check that some hand has a double hand
+        if check_any_double:
+            if no_doubles:
+                return False
+
+        return True
 
     def players_have_dominos(self):
         return min([len(p.get_hand()) for p in self.players]) > 0
@@ -112,7 +143,7 @@ class Engine:
                     return None, None
 
     def get_value_on_domino(self, player):
-        """Get the value of a 'Domino' by a player, i.e. the sum, rounded to the 
+        """Get the value of a 'Domino' by a player, i.e. the sum, rounded to the
            nearest 5, of the other players' hand totals."""
         total = sum([p.hand_total() for i, p in enumerate(self.players) if i != player])
         if total % 5 > 2:
