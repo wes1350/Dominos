@@ -41,10 +41,12 @@ class Engine:
         if fresh_round:
             self.current_player = self.determine_first_player()
         blocked = False
+        play_fresh = fresh_round
         while self.players_have_dominos() and not blocked and not self.game_is_over():
-            blocked = self.play_turn()
+            blocked = self.play_turn(play_fresh)
             self.next_turn()
             print("Scores:", self.get_scores())
+            play_fresh = False
         if not self.players_have_dominos():
             # Reverse current player switch
             self.current_player = (self.current_player + self.n_players - 1) % self.n_players
@@ -63,8 +65,8 @@ class Engine:
         else:  # Game is over
             return False
 
-    def play_turn(self):
-        domino, direction = self.query_move(self.current_player)
+    def play_turn(self, play_fresh=False):
+        domino, direction = self.query_move(self.current_player, play_fresh)
         if domino is not None:
             self.board.add_domino(domino, direction)
             self.players[self.current_player].remove_domino(domino)
@@ -110,7 +112,7 @@ class Engine:
             if n_doubles > 0:
                 no_doubles = False
 
-        # Check that some hand has a double hand
+        # Check that some hand has a double
         if check_any_double:
             if no_doubles:
                 return False
@@ -142,9 +144,9 @@ class Engine:
     def get_player_score(self, player):
         return self.players[player].get_score()
 
-    def query_move(self, player):
+    def query_move(self, player, play_fresh=False):
         while True:
-            possible_placements = self.board.get_valid_placements_for_hand(self.players[player].get_hand())
+            possible_placements = self.board.get_valid_placements_for_hand(self.players[player].get_hand(), play_fresh)
             pretty_placements = [(x[0], str(x[1]), x[2]) for x in possible_placements]
             print("Possible placements:")
             for el in pretty_placements:

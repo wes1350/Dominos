@@ -119,10 +119,22 @@ class Board:
                 valid_dirs.append(direction)
         return valid_dirs
 
-    def get_valid_placements_for_hand(self, hand):
+    def get_valid_placements_for_hand(self, hand, play_fresh=False):
         placements = [] 
+        largest_double = -1
+        if play_fresh:
+            for domino in hand:
+                if domino.is_double():
+                    if domino.head() > largest_double:
+                        largest_double = domino.head()
         for i, domino in enumerate(hand):
-            placements.append((i, domino, self.get_valid_placements(domino)))
+            if play_fresh:
+                if domino.head() != largest_double or not domino.is_double():
+                    placements.append((i, domino, []))
+                else:
+                    placements.append((i, domino, self.get_valid_placements(domino)))
+            else:
+                placements.append((i, domino, self.get_valid_placements(domino)))
         return placements
 
     def set_spinner_x(self, x):
