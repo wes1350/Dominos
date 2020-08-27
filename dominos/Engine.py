@@ -1,5 +1,5 @@
 """A game engine for running a game of Dominos."""
-import sys, random
+import sys, random, json
 sys.path.insert(0, '..')  # For importing app config, required for using db
 from dominos.Config import Config
 from dominos.classes.Board import Board
@@ -7,7 +7,7 @@ from dominos.classes.Pack import Pack
 from dominos.classes.Player import Player
 
 class Engine:
-    def __init__(self):
+    def __init__(self, shout_f=None):
         self.config = Config()
         self.n_players = self.config.n_players
         self.hand_size = self.config.hand_size
@@ -20,6 +20,9 @@ class Engine:
             self.players.append(Player(i))
         self.current_player = None
         self.n_passes = 0
+
+        self.local = shout_f is None
+        self.shout_f = shout_f
 
     def run_game(self):
         """Start and run a game until completion, handling game logic as necessary."""
@@ -69,6 +72,8 @@ class Engine:
         domino, direction = self.query_move(self.current_player, play_fresh)
         if domino is not None:
             self.board.add_domino(domino, direction)
+            if not self.local:
+                self.shout(json.dumps(self.get_placement_rep(domino, direction)), "add_domino")
             self.players[self.current_player].remove_domino(domino)
             score = self.board.score_board()
             self.players[self.current_player].add_points(score)
@@ -209,12 +214,22 @@ class Engine:
                 total -= total % 5
             return scorer, total
 
+    def get_placement_rep(self, domino, direction):
+        rendered_position = self.board.get_rendered_position(domino, direction)
+        return {
+                    "face1": domino.head(),
+                    "face2": domino.tail(),
+                    "face1loc": rendered_position["1"],
+                    "face2loc": rendered_position["2"]
+               }
 
     def whisper(self, msg, player):
         print(player, ":", msg)
 
     def shout(self, msg, msg_type=None):
         print(msg)
+        if not self.local:
+            self.shout_f(msg, msg_type)
 
 
 if __name__ == "__main__":

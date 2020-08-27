@@ -10,19 +10,11 @@ class Board:
         self.west = None
         self.spinner_x = None
 
-    """
-    def get_north(self):
-        return self.north
-
-    def get_east(self):
-        return self.east
-
-    def get_south(self):
-        return self.south
-
-    def get_west(self):
-        return self.west
-    """
+        self.rendered_north = None
+        self.rendered_east = None
+        self.rendered_south = None
+        self.rendered_west = None
+        self.rendered_spinner_x = None
 
     def add_domino(self, domino, direction=""):
         valid, reverse = self.verify_placement(domino, direction)
@@ -38,30 +30,48 @@ class Board:
             self.east = 0
             self.south = 0
             self.west = 0
+
             if domino.is_double():
-                self.set_spinner_x(0)
+                self.spinner_x = 0
+                self.rendered_spinner_x = 0
                 domino.mark_as_spinner()
+
+                self.rendered_north = 2
+                self.rendered_east = 1
+                self.rendered_south = -2
+                self.rendered_west = -1
+            else:
+                self.rendered_north = 1
+                self.rendered_east = 2
+                self.rendered_south = -1
+                self.rendered_west = -2
         elif direction == "N":
             if self.spinner_x is None:
                 raise Exception("Cannot add domino to north side when spinner isn't set")
             self.north += 1
+            self.rendered_north += 2 if domino.is_double() else 4
             self.board[(self.spinner_x, self.north)] = domino
         elif direction == "E":
             self.east += 1
+            self.rendered_east += 2 if domino.is_double() else 4
             self.board[(self.east, 0)] = domino
             if self.spinner_x is None and domino.is_double():
-                self.set_spinner_x(self.east)
+                self.spinner_x = self.east
+                self.rendered_spinner_x = self.rendered_east - 1 
                 domino.mark_as_spinner()
         elif direction == "S":
             if self.spinner_x is None:
                 raise Exception("Cannot add domino to south side when spinner isn't set")
             self.south -= 1
+            self.rendered_south -= 2 if domino.is_double() else 4
             self.board[(self.spinner_x, self.south)] = domino
         elif direction == "W":
             self.west -= 1
+            self.rendered_west -= 2 if domino.is_double() else 4
             self.board[(self.west, 0)] = domino
             if self.spinner_x is None and domino.is_double():
-                self.set_spinner_x(self.west)
+                self.spinner_x = self.west
+                self.rendered_spinner_x = self.rendered_west + 1 
                 domino.mark_as_spinner()
         else:
             raise ValueError("Unknown direction:", direction)
@@ -137,11 +147,6 @@ class Board:
                 placements.append((i, domino, self.get_valid_placements(domino)))
         return placements
 
-    def set_spinner_x(self, x):
-        if self.spinner_x is not None:
-            raise Exception("Spinner already set, cannot update")
-        self.spinner_x = x
-
     def is_empty(self):
         return len(self.board) == 0
 
@@ -185,6 +190,36 @@ class Board:
                     total += self.get_free_end(south, "S")
 
         return total if total % 5 == 0 else 0
+
+    def get_rendered_position(self, domino, direction):
+        if direction == "N":
+            if domino.is_double():
+                return {"1": [self.rendered_spinner_x - 2, self.rendered_north], 
+                        "2": [self.rendered_spinner_x, self.rendered_north]}
+            else:
+                return {"1": [self.rendered_spinner_x - 1, self.rendered_north], 
+                        "2": [self.rendered_spinner_x - 1, self.rendered_north - 2]}
+        elif direction == "E" or direction == "":
+            if domino.is_double():
+                return {"1": [self.rendered_east - 2, 2], 
+                        "2": [self.rendered_east - 2, 0]}
+            else:
+                return {"1": [self.rendered_east - 4, 1], 
+                        "2": [self.rendered_east - 2, 1]}
+        elif direction == "S":
+            if domino.is_double():
+                return {"1": [self.rendered_spinner_x - 2, self.rendered_south + 2], 
+                        "2": [self.rendered_spinner_x, self.rendered_south + 2]}
+            else:
+                return {"1": [self.rendered_spinner_x - 1, self.rendered_south + 4], 
+                        "2": [self.rendered_spinner_x - 1, self.rendered_south + 2]}
+        elif direction == "W":
+            if domino.is_double():
+                return {"1": [self.rendered_west, 2], 
+                        "2": [self.rendered_west, 0]}
+            else:
+                return {"1": [self.rendered_west, 1], 
+                        "2": [self.rendered_west + 2, 1]}
 
     def __str__(self):
         """Prints the current board state."""
