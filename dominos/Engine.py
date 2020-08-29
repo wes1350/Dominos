@@ -7,8 +7,8 @@ from dominos.classes.Pack import Pack
 from dominos.classes.Player import Player
 
 class Engine:
-    def __init__(self, shout_f=None):
-        self.config = Config()
+    def __init__(self, whisper_f=None, shout_f=None, query_f=None, **kwargs):
+        self.config = Config(**kwargs)
         self.n_players = self.config.n_players
         self.hand_size = self.config.hand_size
         self.win_threshold = self.config.win_threshold
@@ -21,8 +21,13 @@ class Engine:
         self.current_player = None
         self.n_passes = 0
 
+        if None in [shout_f, whisper_f, query_f]:
+            raise ValueError("Must specify both shout, whisper, and retrieve functions or omit all")
+
         self.local = shout_f is None
         self.shout_f = shout_f
+        self.whisper_f = whisper_f
+        self.query_f = query_f
 
     def run_game(self):
         """Start and run a game until completion, handling game logic as necessary."""
@@ -151,18 +156,28 @@ class Engine:
         return self.players[player].get_score()
 
     def query_move(self, player, play_fresh=False):
+        print("querying for move")
         while True:
             possible_placements = self.board.get_valid_placements_for_hand(self.players[player].get_hand(), play_fresh)
             pretty_placements = [(x[0], str(x[1]), x[2]) for x in possible_placements]
             print("Possible placements:")
             for el in pretty_placements:
                 print(" --- " + str(el))
+
             move_possible = any([len(t[-1]) > 0 for t in possible_placements])
             if move_possible:
                 try:
-                    domino_index = int(input(f"Player {player}, what domino do you select?\n").strip())
+                    query_msg = f"Player {player}, what domino do you select?\n"
+                    if self.local:
+                        domino_index = int(input(query_msg).strip())
+                    else:
+                        self.whisper(query_msg, player, "prompt")
+                        print("whispered to player for domino number")
+                        response = self.get_response(player)
+                        domino_index = int(response)
+
                     if not (0 <= domino_index < len(possible_placements)) or len(possible_placements[domino_index][-1]) == 0:
-                        self.whisper("Invalid domino choice: " + str(domino_index), player)
+                        self.whisper("Invalid domino choice: " + str(domino_index), player, "error")
                     else:
                         domino = possible_placements[domino_index][1]
                         if len(possible_placements[domino_index][-1]) == 1:
@@ -170,17 +185,28 @@ class Engine:
                             return domino, direction
                         else:
                             while True:
-                                direction = input(f"Player {player}, what direction do you select?\n").strip()
+                                query_msg = f"Player {player}, what direction do you select?\n"
+                                if self.local:
+                                    direction = input(query_msg).strip()
+                                else:
+                                    self.whisper(query_msg, player, "prompt")
+                                    response = self.get_response(player)
+                                    direction = response.strip().upper()
                                 if direction not in possible_placements[domino_index][-1]:
-                                    self.whisper("Invalid direction: " + direction, player)
+                                    self.whisper("Invalid direction: " + direction, player, "error")
                                 else:
                                     return domino, direction
                 except Exception as e:
-                    print("CAUGHT ERROR:", e)
-                    self.whisper("Invalid input, try again", player)
+                    self.whisper("Invalid input, try again", player, "error")
             else:
                 pulled = self.pack.pull()
-                _ = input(f"Player {player}, you have no valid moves. Press Enter to pull\n")
+                query_msg = f"Player {player}, you have no valid moves. Send a blank input to pull\n"
+                if self.local:
+                    _ = input(query_msg)
+                else:
+                    self.whisper(query_msg, player, "prompt")
+                    _ = self.get_response(player)
+
                 if pulled is not None:
                     self.players[player].add_domino(pulled)
                 else:
@@ -224,13 +250,36 @@ class Engine:
                     "face2loc": rendered_position["2"]
                }
 
-    def whisper(self, msg, player):
-        print(player, ":", msg)
+    def get_response(self, player : int, print_wait : bool = False) -> str:
+        """Query server for a response."""
+#         if self._config.verbose:
+#             if print_wait:
+#                 print("Waiting for a response from player {}...".format(player))
+        while True:
+#             if self.is_local_ai(player):
+#                 response = self.local_ai_responses[player]
+#             else:
+#                 response = self.query_f(player)
+            response = self.query_f(player)
+            if response == "No response":
+                time.sleep(0.01)
+#                 time.sleep(self._config.engine_sleep_duration)
+                continue
+            elif response is not None:
+                return response
+            else:
+                assert False
 
-    def shout(self, msg, msg_type=None):
+
+    def whisper(self, msg, player, tag=None):
+        print(player, ":", msg)
+        if not self.local:
+            self.whisper_f(msg, player, tag)
+
+    def shout(self, msg, tag=None):
         print(msg)
         if not self.local:
-            self.shout_f(msg, msg_type)
+            self.shout_f(msg, tag)
 
 
 if __name__ == "__main__":
