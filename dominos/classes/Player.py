@@ -32,3 +32,9 @@ class Player:
 
     def hand_is_empty(self):
         return len(self.hand) == 0
+
+    def get_hand_JSON(self):
+        hand_rep = []
+        for domino in self.hand:
+            hand_rep.append([domino.head(), domino.tail()])
+        return hand_rep

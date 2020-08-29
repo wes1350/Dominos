@@ -46,6 +46,7 @@ class Engine:
     def play_round(self, fresh_round=False):
         self.board = Board()
         self.draw_hands(fresh_round)
+        self.shout("", "clear_board")
         if fresh_round:
             self.current_player = self.determine_first_player()
         blocked = False
@@ -81,6 +82,7 @@ class Engine:
                 self.shout(json.dumps(self.get_placement_rep(domino, direction)), "add_domino")
                 time.sleep(0)
             self.players[self.current_player].remove_domino(domino)
+            self.whisper(self.players[self.current_player].get_hand_JSON(), self.current_player, "hand")
             score = self.board.score_board()
             self.players[self.current_player].add_points(score)
             self.n_passes = 0
@@ -107,6 +109,7 @@ class Engine:
                                  check_5_doubles=self.check_5_doubles):
                 for i in range(self.n_players):
                     self.players[i].assign_hand(hands[i])
+                    self.whisper(self.players[i].get_hand_JSON(), i, "hand")
                 return
 
     def verify_hands(self, hands, check_5_doubles=True, check_any_double=False):
@@ -156,7 +159,6 @@ class Engine:
         return self.players[player].get_score()
 
     def query_move(self, player, play_fresh=False):
-        print("querying for move")
         while True:
             possible_placements = self.board.get_valid_placements_for_hand(self.players[player].get_hand(), play_fresh)
             pretty_placements = [(x[0], str(x[1]), x[2]) for x in possible_placements]
@@ -208,6 +210,7 @@ class Engine:
 
                 if pulled is not None:
                     self.players[player].add_domino(pulled)
+                    self.whisper(self.players[player].get_hand_JSON(), player, "hand")
                 else:
                     self.shout("Pack is empty, cannot pull. Skipping turn")
                     return None, None
