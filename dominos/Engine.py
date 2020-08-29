@@ -31,7 +31,7 @@ class Engine:
 
     def run_game(self):
         """Start and run a game until completion, handling game logic as necessary."""
-        print("Scores:", self.get_scores())
+        self.show_scores()
         next_round_fresh = self.play_round(fresh_round=True)
         while not self.game_is_over():
             next_round_fresh = self.play_round(next_round_fresh)
@@ -53,14 +53,14 @@ class Engine:
         while self.players_have_dominos() and not blocked and not self.game_is_over():
             blocked = self.play_turn(play_fresh)
             self.next_turn()
-            print("Scores:", self.get_scores())
+            self.show_scores()
             play_fresh = False
         if not self.players_have_dominos():
             # Reverse current player switch
             self.current_player = (self.current_player + self.n_players - 1) % self.n_players
             self.players[self.current_player].add_points(self.get_value_on_domino(self.current_player))
             print(f"Player {self.current_player} dominoed!")
-            print("Scores:", self.get_scores())
+            self.show_scores()
             return False
         elif blocked:
             print("Game blocked!")
@@ -68,7 +68,7 @@ class Engine:
             if blocked_scorer is not None:
                 print(f"Player {blocked_scorer} scores {points}")
                 self.players[blocked_scorer].add_points(points)
-            print("Scores:", self.get_scores())
+            self.show_scores()
             return True
         else:  # Game is over
             return False
@@ -172,7 +172,6 @@ class Engine:
                         domino_index = int(input(query_msg).strip())
                     else:
                         self.whisper(query_msg, player, "prompt")
-                        print("whispered to player for domino number")
                         response = self.get_response(player)
                         domino_index = int(response)
 
@@ -248,7 +247,12 @@ class Engine:
                     "face2": domino.tail(),
                     "face1loc": rendered_position["1"],
                     "face2loc": rendered_position["2"]
-               }
+        }
+
+    def show_scores(self):
+        print("Scores:", self.get_scores())
+        if not self.local:
+            self.shout(self.get_scores(), "scores")
 
     def get_response(self, player : int, print_wait : bool = False) -> str:
         """Query server for a response."""
