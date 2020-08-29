@@ -135,15 +135,11 @@ def on_start():
 
 def shout(msg, tag):
     print("SHOUTING")
-    """FOR SOME REASON THIS EMIT IS NOT WORKING"""
     socketio.emit(tag, msg)
-    socketio.send(msg)
 
 @socketio.on('connect')
 def test_connect():
     print("client connected")
-    socketio.send("HI!")
-    send("HI!")
 
 @socketio.on('disconnect')
 def test_disconnect():

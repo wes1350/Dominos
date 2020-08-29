@@ -1,5 +1,5 @@
 """A game engine for running a game of Dominos."""
-import sys, random, json
+import sys, random, json, time
 sys.path.insert(0, '..')  # For importing app config, required for using db
 from dominos.Config import Config
 from dominos.classes.Board import Board
@@ -74,6 +74,7 @@ class Engine:
             self.board.add_domino(domino, direction)
             if not self.local:
                 self.shout(json.dumps(self.get_placement_rep(domino, direction)), "add_domino")
+                time.sleep(0)
             self.players[self.current_player].remove_domino(domino)
             score = self.board.score_board()
             self.players[self.current_player].add_points(score)
