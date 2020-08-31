@@ -36,15 +36,14 @@ class Board:
                 self.rendered_spinner_x = 0
                 domino.mark_as_spinner()
 
-                self.rendered_north = 2
                 self.rendered_east = 1
-                self.rendered_south = -2
                 self.rendered_west = -1
             else:
-                self.rendered_north = 1
                 self.rendered_east = 2
-                self.rendered_south = -1
                 self.rendered_west = -2
+            # Since we can only play north/south off doubles, rendered north/south limits are always the same
+            self.rendered_north = 2
+            self.rendered_south = -2
         elif direction == "N":
             if self.spinner_x is None:
                 raise Exception("Cannot add domino to north side when spinner isn't set")
