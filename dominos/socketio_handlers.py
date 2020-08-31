@@ -138,11 +138,14 @@ def run_socketio(app, host, keep_order=None, cmd_args=None):
 
 @socketio.on('start_game')
 def on_start():
-    print("starting")
     room = 1
-    winner = Engine(emit_to_client_in_room(room), broadcast_to_room(room), retrieve_response_in_room(room),
-                    n_players=len(rt.game_rooms[room]["clients"])).run_game()
-    socketio.stop()
+    if not rt.game_rooms[room]["started"]:  # Don't allow multiple starts
+        print("starting")
+        rt.game_rooms[room]["started"] = True
+        broadcast_to_room(room)("", "game_start")
+        winner = Engine(emit_to_client_in_room(room), broadcast_to_room(room), retrieve_response_in_room(room),
+                        n_players=len(rt.game_rooms[room]["clients"])).run_game()
+        socketio.stop()
 
 @socketio.on('response')
 def store_response(message):
