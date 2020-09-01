@@ -165,6 +165,9 @@ class Engine:
             print("Possible placements:")
             for el in pretty_placements:
                 print(" --- " + str(el))
+            if not self.local:
+                playable_dominos = [i for i in range(len(pretty_placements)) if len(pretty_placements[i][2]) > 0]
+                self.whisper(str(playable_dominos), player, "playable_dominos")
 
             move_possible = any([len(t[-1]) > 0 for t in possible_placements])
             if move_possible:
