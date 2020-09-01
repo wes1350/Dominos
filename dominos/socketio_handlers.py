@@ -143,6 +143,14 @@ def on_start():
         print("starting")
         rt.game_rooms[room]["started"] = True
         broadcast_to_room(room)("", "game_start")
+        clients_keys = list(rt.game_rooms[room]["clients"].keys())
+        random_keys = [i for i in range(len(rt.game_rooms[room]["clients"]))]
+        if not keep_client_order:
+            random.shuffle(random_keys)
+        shuffled_clients = {}
+        for i, k in enumerate(random_keys):
+            shuffled_clients[k] = rt.game_rooms[room]["clients"][clients_keys[i]]
+        rt.game_rooms[room]["clients"] = shuffled_clients
         winner = Engine(emit_to_client_in_room(room), broadcast_to_room(room), retrieve_response_in_room(room),
                         n_players=len(rt.game_rooms[room]["clients"])).run_game()
         socketio.stop()
@@ -225,6 +233,8 @@ def test_connect():
 
 @socketio.on('disconnect')
 def test_disconnect():
+    room = 1
+    del rt.game_rooms[room]["clients"][get_id_from_sid(request.sid)]
     print('Client disconnected')
 # @socketio.on('start game')
 # def on_start(passed_room=None):
